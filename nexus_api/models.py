@@ -1,7 +1,12 @@
 from django.db import models
 
 
+# =========================================================
+# GAME
+# =========================================================
+
 class Game(models.Model):
+
     PLATFORM_CHOICES = [
         ("PC", "PC"),
         ("PS5", "PS5"),
@@ -35,7 +40,6 @@ class Game(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True
     )
-
     updated_at = models.DateTimeField(
         auto_now=True
     )
@@ -44,8 +48,12 @@ class Game(models.Model):
         return self.name
 
 
+# =========================================================
+# PLAYER
+# =========================================================
 
 class Player(models.Model):
+
     name = models.CharField(
         max_length=150
     )
@@ -67,6 +75,37 @@ class Player(models.Model):
         return f"{self.name} - {self.phone}"
 
 
+# =========================================================
+# STATION
+# =========================================================
+
+class Station(models.Model):
+
+    number = models.PositiveIntegerField(
+        unique=True
+    )
+
+    name = models.CharField(
+        max_length=50,
+        unique=True
+    )
+
+    available = models.BooleanField(
+        default=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return self.name
+
+
+# =========================================================
+# RESERVATION
+# =========================================================
+
 class Reservation(models.Model):
 
     STATUS_CHOICES = [
@@ -81,20 +120,23 @@ class Reservation(models.Model):
         unique=True
     )
 
+    reservation_group = models.CharField(
+        max_length=30,
+        blank=True,
+        null=True,
+        db_index=True
+    )
+
     player = models.ForeignKey(
         Player,
         on_delete=models.CASCADE,
         related_name="reservations"
     )
 
-    game = models.ForeignKey(
-        Game,
+    station = models.ForeignKey(
+        Station,
         on_delete=models.PROTECT,
         related_name="reservations"
-    )
-
-    platform = models.CharField(
-        max_length=20
     )
 
     date = models.DateField()
@@ -102,7 +144,7 @@ class Reservation(models.Model):
     time = models.TimeField()
 
     duration = models.PositiveIntegerField(
-        default=1
+        default=2
     )
 
     status = models.CharField(
@@ -115,5 +157,133 @@ class Reservation(models.Model):
         auto_now_add=True
     )
 
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
     def __str__(self):
         return self.reservation_number
+# ============================================================
+# MATCH
+# ============================================================
+
+class Match(models.Model):
+
+    STATUS_CHOICES = [
+        ("PENDING", "Pending"),
+        ("READY", "Ready"),
+        ("CONFIRMED", "Confirmed"),
+        ("CANCELLED", "Cancelled"),
+        ("COMPLETED", "Completed"),
+    ]
+
+    match_number = models.CharField(
+        max_length=30,
+        unique=True
+    )
+
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.PROTECT,
+        related_name="matches"
+    )
+
+    platform = models.CharField(
+        max_length=20
+    )
+
+    date = models.DateField()
+
+    time = models.TimeField()
+
+    players_needed = models.PositiveIntegerField(
+        default=2
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="PENDING"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
+    def __str__(self):
+        return self.match_number
+
+    @property
+    def players_joined(self):
+        return self.players.count()
+
+    def update_status(self):
+        """
+        Automatically changes PENDING -> READY
+        when all required players have joined.
+
+        The admin can later change READY -> CONFIRMED.
+        """
+
+        if self.status in [
+            "CANCELLED",
+            "CONFIRMED",
+            "COMPLETED",
+        ]:
+            return
+
+        if self.players.count() >= self.players_needed:
+            self.status = "READY"
+        else:
+            self.status = "PENDING"
+
+        self.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
+
+
+# ============================================================
+# MATCH PLAYER
+# ============================================================
+
+class MatchPlayer(models.Model):
+
+    match = models.ForeignKey(
+        Match,
+        on_delete=models.CASCADE,
+        related_name="players"
+    )
+
+    player = models.ForeignKey(
+        Player,
+        on_delete=models.CASCADE,
+        related_name="match_players"
+    )
+
+    joined_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "match",
+                    "player",
+                ],
+                name="unique_player_per_match"
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.player.name} - "
+            f"{self.match.match_number}"
+        )
