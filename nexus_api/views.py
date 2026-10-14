@@ -113,7 +113,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
             ).time()
 
             duration = int(
-                duration_value or 2
+                duration_value or 1
             )
 
         except ValueError:
@@ -130,7 +130,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if duration < 2:
+        if duration < 1:
 
             return Response(
                 {
