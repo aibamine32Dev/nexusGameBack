@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    ClientProfile,
     Game,
     Player,
     Station,
@@ -40,6 +41,7 @@ class PlayerAdmin(admin.ModelAdmin):
         "id",
         "name",
         "phone",
+        "points",
         "created_at",
     )
 
@@ -176,3 +178,42 @@ class MatchPlayerAdmin(admin.ModelAdmin):
         "player__name",
         "player__phone",
     )
+
+
+@admin.register(ClientProfile)
+class ClientProfileAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "client_name",
+        "client_email",
+        "phone",
+        "points",
+        "created_at",
+    )
+
+    search_fields = (
+        "user__first_name",
+        "user__email",
+        "phone",
+        "points",
+    )
+
+    readonly_fields = (
+        "created_at",
+    )
+
+    def client_name(self, obj):
+        return obj.user.first_name
+
+    client_name.short_description = "Name"
+
+    def client_email(self, obj):
+        return obj.user.email
+
+    client_email.short_description = "Email"
+
+    def cleint_points(self , obj):
+        return obj.user.points
+    
+    cleint_points.short_description = "points"
+

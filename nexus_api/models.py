@@ -1,5 +1,8 @@
+from django.conf import settings
 from django.db import models
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 # =========================================================
 # GAME
@@ -61,6 +64,10 @@ class Player(models.Model):
     phone = models.CharField(
         max_length=30,
         unique=True
+    )
+
+    points = models.IntegerField(
+        default=0
     )
 
     created_at = models.DateTimeField(
@@ -286,4 +293,56 @@ class MatchPlayer(models.Model):
         return (
             f"{self.player.name} - "
             f"{self.match.match_number}"
+        )
+
+
+# ============================================================
+# CLIENT PROFILE
+# ============================================================
+#
+# A client account = Django User (email + password)
+#                  + ClientProfile (phone number).
+#
+# The Django admin users (staff) have no ClientProfile,
+# so they can never log in as a client.
+
+class ClientProfile(models.Model):
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="client_profile"
+    )
+
+    phone = models.CharField(
+        max_length=30,
+        unique=True
+    )
+
+    points = models.IntegerField(
+        default=0
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return f"{self.user.first_name} - {self.user.email}"
+
+
+
+
+# ... (le reste de vos modèles existants)
+
+@receiver(post_save, sender=ClientProfile)
+def create_player_for_client(sender, instance, created, **kwargs):
+    """
+    Crée automatiquement un Player associé lorsqu'un nouveau ClientProfile est créé.
+    """
+    if created:
+        Player.objects.create(
+            name=instance.user.first_name if instance.user.first_name else "Nouveau Joueur",
+            phone=instance.phone,
+            points=0,  # Points de départ par défaut
         )
