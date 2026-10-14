@@ -132,7 +132,7 @@ class ReservationSerializer(serializers.ModelSerializer):
 
     def validate_duration(self, value):
 
-        if value < 2:
+        if value < 1:
             raise serializers.ValidationError(
                 "La durée minimale d'une réservation est de 2 heures."
             )
