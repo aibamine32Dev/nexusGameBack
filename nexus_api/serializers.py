@@ -134,7 +134,7 @@ class ReservationSerializer(serializers.ModelSerializer):
 
         if value < 1:
             raise serializers.ValidationError(
-                "La durée minimale d'une réservation est de 2 heures."
+                "La durée minimale d'une réservation est de une heure."
             )
 
         return value
