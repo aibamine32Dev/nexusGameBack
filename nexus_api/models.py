@@ -1,8 +1,8 @@
 from django.conf import settings
 from django.db import models
-
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
 
 # =========================================================
 # GAME
@@ -17,35 +17,14 @@ class Game(models.Model):
 
     name = models.CharField(max_length=150)
     category = models.CharField(max_length=100)
-    platform = models.CharField(
-        max_length=20,
-        choices=PLATFORM_CHOICES
-    )
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2
-    )
-    image = models.URLField(
-        max_length=500,
-        blank=True
-    )
-    description = models.TextField(
-        blank=True
-    )
-    tags = models.JSONField(
-        default=list,
-        blank=True
-    )
-    available = models.BooleanField(
-        default=True
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    image = models.URLField(max_length=500, blank=True)
+    description = models.TextField(blank=True)
+    tags = models.JSONField(default=list, blank=True)
+    available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -57,26 +36,11 @@ class Game(models.Model):
 
 class Player(models.Model):
 
-    name = models.CharField(
-        max_length=150
-    )
-
-    phone = models.CharField(
-        max_length=30,
-        unique=True
-    )
-
-    points = models.IntegerField(
-        default=0
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
-
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    name = models.CharField(max_length=150)
+    phone = models.CharField(max_length=30, unique=True)
+    points = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.name} - {self.phone}"
@@ -88,22 +52,10 @@ class Player(models.Model):
 
 class Station(models.Model):
 
-    number = models.PositiveIntegerField(
-        unique=True
-    )
-
-    name = models.CharField(
-        max_length=50,
-        unique=True
-    )
-
-    available = models.BooleanField(
-        default=True
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    number = models.PositiveIntegerField(unique=True)
+    name = models.CharField(max_length=50, unique=True)
+    available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
@@ -122,57 +74,24 @@ class Reservation(models.Model):
         ("COMPLETED", "Completed"),
     ]
 
-    reservation_number = models.CharField(
-        max_length=30,
-        unique=True
-    )
-
-    reservation_group = models.CharField(
-        max_length=30,
-        blank=True,
-        null=True,
-        db_index=True
-    )
-
-    player = models.ForeignKey(
-        Player,
-        on_delete=models.CASCADE,
-        related_name="reservations"
-    )
-
-    station = models.ForeignKey(
-        Station,
-        on_delete=models.PROTECT,
-        related_name="reservations"
-    )
-
+    reservation_number = models.CharField(max_length=30, unique=True)
+    reservation_group = models.CharField(max_length=30, blank=True, null=True, db_index=True)
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="reservations")
+    station = models.ForeignKey(Station, on_delete=models.PROTECT, related_name="reservations")
     date = models.DateField()
-
     time = models.TimeField()
-
-    duration = models.PositiveIntegerField(
-        default=2
-    )
-
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="PENDING"
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
-
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    duration = models.PositiveIntegerField(default=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.reservation_number
-# ============================================================
+
+
+# =========================================================
 # MATCH
-# ============================================================
+# =========================================================
 
 class Match(models.Model):
 
@@ -184,42 +103,25 @@ class Match(models.Model):
         ("COMPLETED", "Completed"),
     ]
 
-    match_number = models.CharField(
-        max_length=30,
-        unique=True
-    )
-
-    game = models.ForeignKey(
-        Game,
-        on_delete=models.PROTECT,
-        related_name="matches"
-    )
-
-    platform = models.CharField(
-        max_length=20
-    )
-
+    match_number = models.CharField(max_length=30, unique=True)
+    game = models.ForeignKey(Game, on_delete=models.PROTECT, related_name="matches")
+    platform = models.CharField(max_length=20)
     date = models.DateField()
-
     time = models.TimeField()
 
-    players_needed = models.PositiveIntegerField(
-        default=2
-    )
+    # Total players wanted for this match (8-10)
+    players_needed = models.PositiveIntegerField(default=8)
 
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="PENDING"
-    )
+    # How many companions the creator brings (not counting themselves)
+    accompanying_players = models.PositiveIntegerField(default=0)
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    # Creator info stored for display
+    creator_name = models.CharField(max_length=150, blank=True, default="")
+    creator_phone = models.CharField(max_length=30, blank=True, default="")
 
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.match_number
@@ -228,83 +130,46 @@ class Match(models.Model):
     def players_joined(self):
         return self.players.count()
 
+    @property
+    def remaining_slots(self):
+        """
+        Slots still available for new players to join.
+        players_needed - players already registered (creator + companions + joiners)
+        """
+        return max(0, self.players_needed - self.players.count())
+
     def update_status(self):
-        """
-        Automatically changes PENDING -> READY
-        when all required players have joined.
-
-        The admin can later change READY -> CONFIRMED.
-        """
-
-        if self.status in [
-            "CANCELLED",
-            "CONFIRMED",
-            "COMPLETED",
-        ]:
+        if self.status in ["CANCELLED", "CONFIRMED", "COMPLETED"]:
             return
-
         if self.players.count() >= self.players_needed:
             self.status = "READY"
         else:
             self.status = "PENDING"
-
-        self.save(
-            update_fields=[
-                "status",
-                "updated_at",
-            ]
-        )
+        self.save(update_fields=["status", "updated_at"])
 
 
-# ============================================================
+# =========================================================
 # MATCH PLAYER
-# ============================================================
+# =========================================================
 
 class MatchPlayer(models.Model):
 
-    match = models.ForeignKey(
-        Match,
-        on_delete=models.CASCADE,
-        related_name="players"
-    )
-
-    player = models.ForeignKey(
-        Player,
-        on_delete=models.CASCADE,
-        related_name="match_players"
-    )
-
-    joined_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="players")
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="match_players")
+    joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=[
-                    "match",
-                    "player",
-                ],
-                name="unique_player_per_match"
-            )
+            models.UniqueConstraint(fields=["match", "player"], name="unique_player_per_match")
         ]
 
     def __str__(self):
-        return (
-            f"{self.player.name} - "
-            f"{self.match.match_number}"
-        )
+        return f"{self.player.name} - {self.match.match_number}"
 
 
-# ============================================================
+# =========================================================
 # CLIENT PROFILE
-# ============================================================
-#
-# A client account = Django User (email + password)
-#                  + ClientProfile (phone number).
-#
-# The Django admin users (staff) have no ClientProfile,
-# so they can never log in as a client.
+# =========================================================
 
 class ClientProfile(models.Model):
 
@@ -313,36 +178,19 @@ class ClientProfile(models.Model):
         on_delete=models.CASCADE,
         related_name="client_profile"
     )
-
-    phone = models.CharField(
-        max_length=30,
-        unique=True
-    )
-
-    points = models.IntegerField(
-        default=0
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    phone = models.CharField(max_length=30, unique=True)
+    points = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.first_name} - {self.user.email}"
 
 
-
-
-# ... (le reste de vos modèles existants)
-
 @receiver(post_save, sender=ClientProfile)
 def create_player_for_client(sender, instance, created, **kwargs):
-    """
-    Crée automatiquement un Player associé lorsqu'un nouveau ClientProfile est créé.
-    """
     if created:
         Player.objects.create(
             name=instance.user.first_name if instance.user.first_name else "Nouveau Joueur",
             phone=instance.phone,
-            points=0,  # Points de départ par défaut
+            points=0,
         )

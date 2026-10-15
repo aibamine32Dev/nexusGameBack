@@ -29,7 +29,7 @@ if not SECRET_KEY:
 
 
 # False en production sur Render
-DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
 
 
 # ============================================================
